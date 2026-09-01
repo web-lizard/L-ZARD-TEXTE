@@ -109,5 +109,22 @@ const uniEnts = [{id: 'u', type: 'bold' as const, start: 7, end: 9}];
 const uniHtml = toClipboardHtml(uniText, uniEnts);
 assert(uniHtml === 'Привет <b>👁</b> мир', `emoji offset html: got "${uniHtml}"`);
 
+// 11. Clipboard HTML в формате Telegram: <br> вместо \n, <spoiler>, <blockquote>
+const cbText = 'a\nb';
+assert(toClipboardHtml(cbText, []) === 'a<br>b', 'clipboard <br> join');
+const cbSpoiler = toClipboardHtml('xxsecretxx', [
+  {id: 'sp', type: 'spoiler' as const, start: 2, end: 8},
+]);
+assert(cbSpoiler === 'xx<spoiler>secret</spoiler>xx', `clipboard spoiler: got "${cbSpoiler}"`);
+const cbQuote = toClipboardHtml('l1\nquoted\nl3', [
+  {id: 'q', type: 'blockquote' as const, start: 3, end: 9},
+]);
+assert(cbQuote === 'l1<blockquote>quoted</blockquote>l3', `clipboard quote: got "${cbQuote}"`);
+const cbMixed = toClipboardHtml('one\ntwo\nthree', [
+  {id: 'b1', type: 'bold' as const, start: 0, end: 3},
+  {id: 'i2', type: 'italic' as const, start: 4, end: 7},
+]);
+assert(cbMixed === '<b>one</b><br><i>two</i><br>three', `clipboard mixed: got "${cbMixed}"`);
+
 console.log(failed === 0 ? '\nALL PASSED' : `\n${failed} FAILED`);
 process.exit(failed === 0 ? 0 : 1);

@@ -6,7 +6,7 @@ import {Toast} from '../components/Toast';
 import {WysiwygText} from '../editor/WysiwygText';
 import type {FormatType, TextEntity} from '../types';
 import {toClipboardHtml} from '../services/telegramExport';
-import {copyRich} from '../services/clipboard';
+import {copyRich, readClipboardHtml} from '../services/clipboard';
 import {makeId} from '../utils/text';
 
 const SAMPLE_LINES: {type: FormatType; text: string}[] = [
@@ -37,15 +37,33 @@ interface Props {
 export function TestTelegramScreen({onBack}: Props) {
   const sample = useMemo(buildSample, []);
   const [toast, setToast] = useState<string | null>(null);
+  const [clipStatus, setClipStatus] = useState<string | null>(null);
 
-  const copyTest = useCallback(async () => {
-    try {
-      await copyRich(toClipboardHtml(sample.text, sample.entities), sample.text);
-      setToast('Тест скопирован. Вставь в Telegram и проверь, что сохранилось.');
-    } catch {
-      setToast('Не удалось скопировать.');
-    }
-  }, [sample]);
+  const copyTest = useCallback(
+    async (variant: 'native' | 'doc') => {
+      const html =
+        variant === 'native'
+          ? toClipboardHtml(sample.text, sample.entities)
+          : `<!DOCTYPE html><html><body>${toClipboardHtml(sample.text, sample.entities)}</body></html>`;
+      try {
+        await copyRich(html, sample.text);
+        let status = `HTML: ${html.length} симв.`;
+        try {
+          const info = await readClipboardHtml();
+          status = info.present
+            ? `✅ HTML в буфере: ${info.html.length} симв.\nMIME: ${info.mimes}\n${info.html.slice(0, 120)}`
+            : `⚠️ HTML в буфере ОТСУТСТВУЕТ (MIME: ${info.mimes})`;
+        } catch {
+          status += '\n(чтение буфера недоступно)';
+        }
+        setClipStatus(status);
+        setToast('Скопировано. Вставь в Telegram и проверь стили.');
+      } catch {
+        setToast('Не удалось скопировать.');
+      }
+    },
+    [sample],
+  );
 
   return (
     <View style={styles.root}>
@@ -65,13 +83,24 @@ export function TestTelegramScreen({onBack}: Props) {
             Нажми COPY TEST и вставь текст в поле ввода Telegram обычным образом.
           </Text>
           <Text style={styles.noteText}>
-            Должны сохраниться жирный, курсив, подчёркивание, зачёркивание, цитата и спойлер.
-            Если Telegram сбрасывает какой-то стиль при вставке — это особенность Telegram,
-            приложение не ломается.
+            Если стили не сохранились — посмотри статус ниже и пришли его.
           </Text>
         </View>
 
-        <BigButton title="COPY TEST" caption="TEST COPIE" onPress={copyTest} />
+        <BigButton title="COPY TEST" caption="TEST COPIE" onPress={() => copyTest('native')} />
+        <View style={styles.spacer} />
+        <BigButton
+          title="COPY DOC"
+          caption="FULL HTML"
+          onPress={() => copyTest('doc')}
+          variant="ghost"
+        />
+
+        {clipStatus && (
+          <View style={styles.statusBox}>
+            <Text style={styles.statusText}>{clipStatus}</Text>
+          </View>
+        )}
       </ScrollView>
 
       <Pressable style={styles.backBtn} onPress={onBack}>
@@ -137,6 +166,23 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: 6,
   },
+  spacer: {
+    height: 12,
+  },
+  statusBox: {
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: COLORS.accent,
+    borderRadius: 8,
+    backgroundColor: COLORS.surface,
+    padding: 12,
+  },
+  statusText: {
+    color: COLORS.textMuted,
+    fontSize: 12,
+    lineHeight: 18,
+    fontFamily: 'monospace',
+  },
   backBtn: {
     position: 'absolute',
     left: 20,
@@ -149,3 +195,4 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
 });
+

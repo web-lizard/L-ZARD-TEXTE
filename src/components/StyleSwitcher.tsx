@@ -24,10 +24,17 @@ export function StyleSwitcher({value, onChange}: Props) {
           <Pressable
             key={s.key}
             onPress={() => onChange(s.key)}
-            style={[styles.chip, active && styles.chipActive]}
-            android_ripple={{color: 'rgba(167,226,46,0.15)'}}>
-            <Text style={[styles.label, active && styles.labelActive]}>{s.label}</Text>
-            <Text style={[styles.caption, active && styles.captionActive]}>{s.caption}</Text>
+            style={[styles.chip, active ? styles.chipActive : styles.chipIdle]}
+            android_ripple={{color: 'rgba(167,226,46,0.2)'}}>
+            <View style={styles.dotRow}>
+              <View style={[styles.dot, active ? styles.dotActive : styles.dotIdle]} />
+              <Text style={[styles.label, active ? styles.labelActive : styles.labelIdle]}>
+                {s.label}
+              </Text>
+            </View>
+            <Text style={[styles.caption, active ? styles.captionActive : styles.captionIdle]}>
+              {s.caption}
+            </Text>
           </Pressable>
         );
       })}
@@ -42,32 +49,57 @@ const styles = StyleSheet.create({
   },
   chip: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.surface,
-    borderRadius: 6,
-    paddingVertical: 10,
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 6,
     alignItems: 'center',
+    borderWidth: 2,
   },
   chipActive: {
+    backgroundColor: COLORS.accent,
     borderColor: COLORS.accent,
-    backgroundColor: COLORS.oliveDark,
+    elevation: 4,
+  },
+  chipIdle: {
+    backgroundColor: COLORS.surface,
+    borderColor: COLORS.border,
+  },
+  dotRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  dot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  dotActive: {
+    backgroundColor: COLORS.bg,
+  },
+  dotIdle: {
+    backgroundColor: COLORS.textDim,
   },
   label: {
-    color: COLORS.textMuted,
     fontSize: 11,
     fontWeight: '800',
-    letterSpacing: 1,
+    letterSpacing: 0.8,
   },
   labelActive: {
-    color: COLORS.accent,
+    color: COLORS.bg,
+  },
+  labelIdle: {
+    color: COLORS.textMuted,
   },
   caption: {
-    color: COLORS.textDim,
     fontSize: 9,
-    marginTop: 2,
+    marginTop: 4,
   },
   captionActive: {
-    color: COLORS.textMuted,
+    color: COLORS.oliveDark,
+    fontWeight: '700',
+  },
+  captionIdle: {
+    color: COLORS.textDim,
   },
 });

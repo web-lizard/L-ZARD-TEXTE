@@ -54,4 +54,36 @@ class RichClipboardModule(reactContext: ReactApplicationContext) :
             promise.reject("CLIPBOARD_ERROR", e)
         }
     }
+
+    /**
+     * Диагностика: читает HTML из системного буфера, чтобы проверить,
+     * что rich clipboard реально содержит HTML (text/html MIME).
+     */
+    @ReactMethod
+    fun readClipboardHtml(promise: Promise) {
+        try {
+            val cm = clipboard()
+            val clip = cm?.primaryClip
+            if (clip == null || clip.itemCount < 1) {
+                promise.resolve(mapOf("present" to false, "html" to ""))
+                return
+            }
+            val html = clip.getItemAt(0).htmlText
+            val mimes = if (clip.description.mimeTypeCount > 0) {
+                (0 until clip.description.mimeTypeCount)
+                    .joinToString(",") { clip.description.getMimeType(it) }
+            } else {
+                ""
+            }
+            promise.resolve(
+                mapOf(
+                    "present" to (html != null && html.isNotEmpty()),
+                    "html" to (html ?: ""),
+                    "mimes" to mimes,
+                )
+            )
+        } catch (e: Exception) {
+            promise.reject("CLIPBOARD_ERROR", e)
+        }
+    }
 }

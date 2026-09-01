@@ -35,11 +35,11 @@ export function escapeMarkdownV2(s: string): string {
 
 const SPOILER_OPEN: Record<'export' | 'clipboard', string> = {
   export: '<tg-spoiler>',
-  clipboard: '<span class="tg-spoiler">',
+  clipboard: '<spoiler>',
 };
 const SPOILER_CLOSE: Record<'export' | 'clipboard', string> = {
   export: '</tg-spoiler>',
-  clipboard: '</span>',
+  clipboard: '</spoiler>',
 };
 
 const INLINE_TAGS: Record<'bold' | 'italic' | 'underline' | 'strikethrough', [string, string]> = {
@@ -144,15 +144,31 @@ export function toTelegramHtml(text: string, entities: TextEntity[]): string {
     .join('\n');
 }
 
-/** HTML для Android rich clipboard (spoiler = span.tg-spoiler). */
+/**
+ * HTML для Android rich clipboard в РОДНОМ формате Telegram
+ * (формат CustomHtml: b/i/u/s, blockquote, spoiler, br вместо \n).
+ * Именно его Telegram читает через RichHtml.parse при вставке.
+ */
 export function toClipboardHtml(text: string, entities: TextEntity[]): string {
   const lines = splitLines(text);
-  return lines
-    .map(line => {
-      const inner = buildInlineHtml(line, entities, 'clipboard');
-      return isLineQuoted(entities, line) ? `<blockquote>${inner}</blockquote>` : inner;
-    })
-    .join('\n');
+  const parts: string[] = [];
+  let run: Line[] = [];
+  const flushRun = () => {
+    if (run.length > 0) {
+      parts.push(run.map(l => buildInlineHtml(l, entities, 'clipboard')).join('<br>'));
+      run = [];
+    }
+  };
+  for (const line of lines) {
+    if (isLineQuoted(entities, line)) {
+      flushRun();
+      parts.push(`<blockquote>${buildInlineHtml(line, entities, 'clipboard')}</blockquote>`);
+    } else {
+      run.push(line);
+    }
+  }
+  flushRun();
+  return parts.join('');
 }
 
 /** Telegram MarkdownV2 — генерируется только локально, ИИ его не видит. */

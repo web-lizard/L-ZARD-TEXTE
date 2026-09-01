@@ -8,6 +8,7 @@ const RichClipboard = NativeModules.RichClipboard as
   | {
       copyRich?: (html: string, plain: string) => Promise<boolean>;
       copyText?: (plain: string) => Promise<boolean>;
+      readClipboardHtml?: () => Promise<{present: boolean; html: string; mimes: string}>;
     }
   | undefined;
 
@@ -39,6 +40,14 @@ export function copyText(plain: string): Promise<boolean> {
       throw new Error('clipboard failed');
     },
   );
+}
+
+/** Диагностика: что реально лежит в буфере (HTML, MIME). */
+export function readClipboardHtml(): Promise<{present: boolean; html: string; mimes: string}> {
+  if (Platform.OS !== 'android' || !RichClipboard?.readClipboardHtml) {
+    return Promise.reject(new Error('no native'));
+  }
+  return RichClipboard.readClipboardHtml();
 }
 
 void noNative;
