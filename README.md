@@ -40,10 +40,16 @@ android/
 
 - App общается только с `https://cv038824.tw1.ru/deep-seek/deep-seek.php`
   (адрес в `src/config/api.ts`).
-- Секрет DeepSeek живёт на сервере в `.seferometer-secrets/deepseek.key`
-  и никогда не попадает в APK.
+- Секрет DeepSeek хранится на сервере в PHP-proxy
+  (`$apiKey = 'sk-...';` в `deep-seek.php`) и никогда не попадает в APK.
 - Один текст = один stateless запрос. Модель возвращает только JSON со
   списком фрагментов — никакого повторного вывода исходного текста.
+
+## Проверка proxy (dev)
+
+```bash
+python scripts/test_proxy.py
+```
 
 ## Сборка APK
 
